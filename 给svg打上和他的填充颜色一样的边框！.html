@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<!--i'm good!-->
+<html lang="zh">
+
+<head>
+  <meta charset="UTF-8">
+  <title>给svg打上和他的填充颜色一样的边框！</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js">
+  </script>
+  <style>
+    .center {
+      margin: auto;
+      width: 60%;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="center">
+    <h1>给svg打上和他的填充颜色一样的边框！</h1>
+    <hr>
+    <input type="file" id="upload" accept=".svg" />
+    <br>
+    <button onclick="f()">下载SVG文件</button>
+  </div>
+  <script>
+    function f() {
+      const fileInput = document.getElementById('upload');
+      if (fileInput.files.length > 0) {
+        const file = fileInput.files[0];
+        if (file.type === "image/svg+xml") {
+          const reader = new FileReader();
+          reader.onload = function (e) {
+            const parser = new DOMParser(), doc = parser.parseFromString(e.target.result, "image/svg+xml"), paths = doc.querySelectorAll('path');
+            paths.forEach(path => {
+              const fillColor = path.getAttribute('fill');
+              path.setAttribute('stroke', fillColor);
+              path.setAttribute('stroke-width', '1');
+            });
+            const serializer = new XMLSerializer();
+            const modifiedSvgStr = serializer.serializeToString(doc);
+            const blob = new Blob([modifiedSvgStr], {
+              type: "image/svg+xml;charset=utf-8"
+            });
+            saveAs(blob, "img.svg");
+          };
+          reader.readAsText(file);
+        } else alert("你应该上传SVG文件。");
+      } else alert("没有文件被上传。");
+    }
+  </script>
+</body>
+
+</html>
