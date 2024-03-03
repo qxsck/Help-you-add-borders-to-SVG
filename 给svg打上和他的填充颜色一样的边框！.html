@@ -5,12 +5,21 @@
 <head>
   <meta charset="UTF-8">
   <title>给svg打上和他的填充颜色一样的边框！</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js">
-  </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"> </script>
   <style>
     .center {
       margin: auto;
       width: 60%;
+    }
+
+    .display {
+      display: flex;
+      justify-content: space-around;
+    }
+
+    .svg {
+      border: 0.5px solid #ccc;
+      padding: 30px;
     }
   </style>
 </head>
@@ -21,10 +30,17 @@
     <hr>
     <input type="file" id="upload" accept=".svg" />
     <br>
-    <button onclick="f()">下载SVG文件</button>
+    <button onclick="download()">下载SVG文件</button>
+  </div>
+  <br>
+  <div class="display">
+    <div id="svgShow" class="svg"></div>
+    <div id="modifiedSvgShow" class="svg"></div>
   </div>
   <script>
-    function f() {
+    let modifiedSvgStr = '';
+
+    function modifySVG() {
       const fileInput = document.getElementById('upload');
       if (fileInput.files.length > 0) {
         const file = fileInput.files[0];
@@ -38,16 +54,34 @@
               path.setAttribute('stroke-width', '1');
             });
             const serializer = new XMLSerializer();
-            const modifiedSvgStr = serializer.serializeToString(doc);
-            const blob = new Blob([modifiedSvgStr], {
-              type: "image/svg+xml;charset=utf-8"
-            });
-            saveAs(blob, "img.svg");
+            modifiedSvgStr = serializer.serializeToString(doc);
+            document.getElementById('modifiedSvgShow').innerHTML = modifiedSvgStr;
           };
           reader.readAsText(file);
         } else alert("你应该上传SVG文件。");
       } else alert("没有文件被上传。");
     }
+
+    function download() {
+      const blob = new Blob([modifiedSvgStr], {
+        type: "image/svg+xml;charset=utf-8"
+      });
+      saveAs(blob, "img.svg");
+    }
+
+    document.getElementById('upload').addEventListener('change', function (event) {
+      const file = event.target.files[0];
+      if (file.type === "image/svg+xml") {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          document.getElementById('svgShow').innerHTML = e.target.result;
+          modifySVG();
+        };
+        reader.readAsText(file);
+      } else {
+        alert("你应该上传SVG文件。");
+      }
+    });
   </script>
 </body>
 
