@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-<!--i'm good!-->
 <html lang="zh">
 
 <head>
@@ -12,14 +11,47 @@
       width: 60%;
     }
 
+    #upload {
+      display: none;
+    }
+
+    .upload-btn {
+      display: inline-block;
+      padding: 8px 15px;
+      background-color: #f0f0f0;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .textCenter {
+      text-align: center;
+      line-height: 50%;
+      padding: 7.5px;
+    }
+
     .display {
       display: flex;
-      justify-content: space-around;
+      justify-content: center;
+    }
+
+    .display > * {
+      margin: 0 10px;
+    }
+
+    .box {
+      border-style: solid;
+      border-width: 3px;
+      border-radius: 25px;
     }
 
     .svg {
-      border: 0.5px solid #ccc;
-      padding: 30px;
+      border: 0px solid #ccc;
+      padding: 10px;
+    }
+
+    .p {
+      line-height: 0;
     }
   </style>
 </head>
@@ -28,34 +60,72 @@
   <div class="center">
     <h1>给svg打上和他的填充颜色一样的边框！</h1>
     <hr>
-    <input type="file" id="upload" accept=".svg" />
-    <br>
-    <button onclick="download()">下载SVG文件</button>
+    <div class="display">
+      <div class="textCenter">
+        <label for="upload" class="upload-btn">上传SVG</label>
+        <input type="file" id="upload" accept=".svg">
+      </div>
+      <div class="textCenter">
+        <div onclick="download()" class="upload-btn" style="cursor:pointer;">下载SVG</div>
+      </div>
+    </div>
+    <div class="display">
+      <div class="textCenter">
+        <div class="p">
+          <p>边框大小（px）</p>
+        </div>
+        <input type="number" id="inputSize" value="1" step="any" style="resize: none;" readonly onfocus="this.removeAttribute('readonly');" />
+      </div>
+      <div class="textCenter">
+        <div class="p">
+          <p>边框不透明度（%）</p>
+        </div>
+        <input type="number" id="inputOpacity" value="100" step="any" style="resize: none;" readonly onfocus="this.removeAttribute('readonly');" />
+      </div>
+    </div>
   </div>
   <br>
   <div class="display">
-    <div id="svgShow" class="svg"></div>
-    <div id="modifiedSvgShow" class="svg"></div>
+    <div class="box">
+      <div class="textCenter">
+        <p>未修改</p>
+      </div>
+      <div id="svgShow" class="svg"></div>
+    </div>
+    <div class="box">
+      <div class="textCenter">
+        <p>已修改</p>
+      </div>
+      <div id="modifiedSvgShow" class="svg"></div>
+    </div>
   </div>
   <script>
-    let modifiedSvgStr = '';
+    let modifiedSvgStr = "";
+    let originalSvgStr = "";
 
     function modifySVG() {
-      const fileInput = document.getElementById('upload');
+      const fileInput = document.getElementById("upload");
+      const size = document.getElementById("inputSize").value;
+      const opacity = document.getElementById("inputOpacity").value;
+      const useSize = isNaN(Number(size)) ? "1" : size;
+      const useOpacity = isNaN(Number(opacity)) ? 1 : Number(opacity) / 100;
       if (fileInput.files.length > 0) {
         const file = fileInput.files[0];
         if (file.type === "image/svg+xml") {
           const reader = new FileReader();
           reader.onload = function (e) {
-            const parser = new DOMParser(), doc = parser.parseFromString(e.target.result, "image/svg+xml"), paths = doc.querySelectorAll('path');
-            paths.forEach(path => {
-              const fillColor = path.getAttribute('fill');
-              path.setAttribute('stroke', fillColor);
-              path.setAttribute('stroke-width', '1');
+            const parser = new DOMParser(),
+              doc = parser.parseFromString(e.target.result, "image/svg+xml"),
+              paths = doc.querySelectorAll("path");
+            paths.forEach((path) => {
+              const fillColor = path.getAttribute("fill");
+              path.setAttribute("stroke", fillColor);
+              path.setAttribute("stroke-width", useSize);
+              path.setAttribute("stroke-opacity", String(useOpacity));
             });
             const serializer = new XMLSerializer();
             modifiedSvgStr = serializer.serializeToString(doc);
-            document.getElementById('modifiedSvgShow').innerHTML = modifiedSvgStr;
+            document.getElementById("modifiedSvgShow").innerHTML = modifiedSvgStr;
           };
           reader.readAsText(file);
         } else alert("你应该上传SVG文件。");
@@ -64,17 +134,18 @@
 
     function download() {
       const blob = new Blob([modifiedSvgStr], {
-        type: "image/svg+xml;charset=utf-8"
+        type: "image/svg+xml;charset=utf-8",
       });
       saveAs(blob, "img.svg");
     }
 
-    document.getElementById('upload').addEventListener('change', function (event) {
+    document.getElementById("upload").addEventListener("change", function (event) {
       const file = event.target.files[0];
-      if (file.type === "image/svg+xml") {
+      if (file && file.type === "image/svg+xml") {
         const reader = new FileReader();
         reader.onload = function (e) {
-          document.getElementById('svgShow').innerHTML = e.target.result;
+          originalSvgStr = e.target.result;
+          document.getElementById("svgShow").innerHTML = originalSvgStr;
           modifySVG();
         };
         reader.readAsText(file);
@@ -82,6 +153,30 @@
         alert("你应该上传SVG文件。");
       }
     });
+
+    function updateSVGStrokeWidth() {
+      const size = document.getElementById("inputSize").value;
+      const opacity = document.getElementById("inputOpacity").value;
+      const useSize = isNaN(Number(size)) ? "1" : size;
+      const useOpacity = isNaN(Number(opacity)) ? 1 : Number(opacity) / 100;
+      if (originalSvgStr) {
+        const parser = new DOMParser(),
+          doc = parser.parseFromString(originalSvgStr, "image/svg+xml"),
+          paths = doc.querySelectorAll("path");
+        paths.forEach((path) => {
+          const fillColor = path.getAttribute("fill");
+          path.setAttribute("stroke", fillColor);
+          path.setAttribute("stroke-width", useSize);
+          path.setAttribute("stroke-opacity", String(useOpacity));
+        });
+        const serializer = new XMLSerializer();
+        modifiedSvgStr = serializer.serializeToString(doc);
+        document.getElementById("modifiedSvgShow").innerHTML = modifiedSvgStr;
+      }
+    }
+
+    document.getElementById("inputSize").addEventListener("change", updateSVGStrokeWidth);
+    document.getElementById("inputOpacity").addEventListener("change", updateSVGStrokeWidth);
   </script>
 </body>
 
